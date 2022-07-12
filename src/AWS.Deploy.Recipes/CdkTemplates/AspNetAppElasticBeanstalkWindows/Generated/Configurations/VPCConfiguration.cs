@@ -15,6 +15,11 @@ namespace AspNetAppElasticBeanstalkWindows.Configurations
         public bool UseVPC { get; set; }
 
         /// <summary>
+        /// Creates a new VPC if set to true.
+        /// </summary>
+        public bool CreateNew { get; set; }
+
+        /// <summary>
         /// The VPC ID to use for the Elastic Beanstalk service.
         /// </summary>
         public string? VpcId { get; set; }
@@ -24,6 +29,11 @@ namespace AspNetAppElasticBeanstalkWindows.Configurations
         /// Specify IDs of subnets of a single Amazon VPC.
         /// </summary>
         public SortedSet<string> Subnets { get; set; } = new SortedSet<string>();
+
+        /// <summary>
+        /// A list of IDs of subnets that Elastic Beanstalk should use when it associates your load balancer with a custom Amazon VPC.
+        /// </summary>
+        public SortedSet<string> LoadBalancerSubnets { get; set; } = new SortedSet<string>();
 
         /// <summary>
         /// Lists the Amazon EC2 security groups to assign to the EC2 instances in the Auto Scaling group to define firewall rules for the instances.

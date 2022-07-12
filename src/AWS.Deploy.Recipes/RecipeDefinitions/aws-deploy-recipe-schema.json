@@ -516,7 +516,8 @@
                         "ExistingVpcConnector",
                         "ExistingECSCluster",
                         "ExistingApplicationLoadBalancer",
-                        "S3BucketName"
+                        "S3BucketName",
+                        "ElasticBeanstalkVpc"
                     ]
                 },
                 "DefaultValue": {
@@ -617,7 +618,8 @@
                                     "SecurityGroupsInVpc",
                                     "Uri",
                                     "Comparison",
-                                    "VPCSubnetsInDifferentAZs"
+                                    "VPCSubnetsInDifferentAZs",
+                                    "VpcExists"
                                 ]
                             }
                         },
@@ -715,6 +717,31 @@
                                     "properties": {
                                         "Configuration": {
                                             "properties": {
+                                                "ValidationFailedMessage": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "if": {
+                                    "properties": { "ValidatorType": { "const": "VpcExists" } }
+                                },
+                                "then": {
+                                    "properties": {
+                                        "Configuration": {
+                                            "properties": {
+                                                "FailValue": {
+                                                    "type": "boolean"
+                                                },
+                                                "DefaultVpc": {
+                                                    "type": "boolean"
+                                                },
+                                                "ValueType": {
+                                                    "type": "string"
+                                                },
                                                 "ValidationFailedMessage": {
                                                     "type": "string"
                                                 }
