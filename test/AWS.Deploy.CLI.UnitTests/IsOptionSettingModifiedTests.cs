@@ -5,56 +5,42 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Amazon.Runtime;
 using AWS.Deploy.CLI.UnitTests.Utilities;
-using AWS.Deploy.Common;
-using AWS.Deploy.Common.DeploymentManifest;
 using AWS.Deploy.Common.IO;
 using AWS.Deploy.Common.Recipes;
 using AWS.Deploy.Common.Recipes.Validation;
 using AWS.Deploy.Orchestration;
-using AWS.Deploy.Orchestration.RecommendationEngine;
 using AWS.Deploy.Constants;
 using Moq;
 using Xunit;
+using AWS.Deploy.Common.Data;
 
 namespace AWS.Deploy.CLI.UnitTests
 {
     public class IsOptionSettingModifiedTests
     {
         private readonly IOptionSettingHandler _optionSettingHandler;
-        private readonly RecommendationEngine _recommendationEngine;
+        private readonly Mock<IServiceProvider> _serviceProvider;
 
         public IsOptionSettingModifiedTests()
         {
-            var projectPath = SystemIOUtilities.ResolvePath("WebAppWithDockerFile");
-            var directoryManager = new DirectoryManager();
-            var fileManager = new FileManager();
-            var deploymentManifestEngine = new DeploymentManifestEngine(directoryManager, fileManager);
-            var orchestratorInteractiveService = new Mock<IOrchestratorInteractiveService>().Object;
-
-            var parser = new ProjectDefinitionParser(fileManager, directoryManager);
-            var awsCredentials = new Mock<AWSCredentials>();
-            var orchestratorSession = new OrchestratorSession(
-                parser.Parse(projectPath).GetAwaiter().GetResult(),
-                awsCredentials.Object,
-                "us-west-2",
-                "123456789012")
-            {
-                AWSProfileName = "default"
-            };
-
-            var validatorFactory = new TestValidatorFactory();
-            _optionSettingHandler = new OptionSettingHandler(validatorFactory);
-            var recipeHandler = new RecipeHandler(deploymentManifestEngine, orchestratorInteractiveService, directoryManager, fileManager, _optionSettingHandler, validatorFactory);
-            _recommendationEngine = new RecommendationEngine(orchestratorSession, recipeHandler);
+            _serviceProvider = new Mock<IServiceProvider>();
+            _optionSettingHandler = new OptionSettingHandler(new ValidatorFactory(_serviceProvider.Object));
         }
 
         [Fact]
         public async Task IsOptionSettingModified_ElasticBeanstalk()
         {
             // ARRANGE - select recommendation
-            var recommendations = await _recommendationEngine.ComputeRecommendations();
+            var engine = await HelperFunctions.BuildRecommendationEngine(
+                "WebAppWithDockerFile",
+                new FileManager(),
+                new DirectoryManager(),
+                "us-west-2",
+                "123456789012",
+                "default"
+            );
+            var recommendations = await engine.ComputeRecommendations();
             var selectedRecommendation = recommendations.FirstOrDefault(x => string.Equals(x.Recipe.Id, "AspNetAppElasticBeanstalkLinux"));
 
             // ARRANGE - add replacement tokens
@@ -91,7 +77,15 @@ namespace AWS.Deploy.CLI.UnitTests
         public async Task IsOptionSettingModified_ECSFargate()
         {
             // ARRANGE - select recommendation
-            var recommendations = await _recommendationEngine.ComputeRecommendations();
+            var engine = await HelperFunctions.BuildRecommendationEngine(
+                "WebAppWithDockerFile",
+                new FileManager(),
+                new DirectoryManager(),
+                "us-west-2",
+                "123456789012",
+                "default"
+            );
+            var recommendations = await engine.ComputeRecommendations();
             var selectedRecommendation = recommendations.FirstOrDefault(x => string.Equals(x.Recipe.Id, "AspNetAppEcsFargate"));
 
             // ARRANGE - add replacement tokens
@@ -123,11 +117,5 @@ namespace AWS.Deploy.CLI.UnitTests
                 }
             }
         }
-    }
-
-    public class TestValidatorFactory : IValidatorFactory
-    {
-        public IOptionSettingItemValidator[] BuildValidators(OptionSettingItem optionSettingItem, Func<OptionSettingItemValidatorConfig, bool> filter = null) => new IOptionSettingItemValidator[0];
-        public IRecipeValidator[] BuildValidators(RecipeDefinition recipeDefinition) => new IRecipeValidator[0];
     }
 }
